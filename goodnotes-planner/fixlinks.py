@@ -33,7 +33,7 @@ for page in writer.pages:
         a[NameObject("/Dest")] = ArrayObject([target, NameObject("/Fit")])
         fixed += 1
 
-writer.add_metadata({"/Title": "Atelier Planner 2027", "/Author": "Atelier",
+writer.add_metadata({"/Title": "Atelier Soleil 2027", "/Author": "Atelier",
                      "/Subject": "Digital planner for GoodNotes (landscape iPad, 4:3)"})
 writer.write(src)
 print(f"links rewritten: {fixed}, unresolved: {missing}")
