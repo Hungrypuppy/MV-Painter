@@ -59,8 +59,6 @@ def fmt_hm(t):
 PHASE_NAME = {"new": "New moon", "first": "First quarter", "full": "Full moon", "last": "Last quarter"}
 
 cal = calendar.Calendar(firstweekday=0)
-WEEK_SAMPLE = dt.date(YEAR, 1, 4)
-DAY_SAMPLE = dt.date(YEAR, 1, 4)
 
 
 def week_id(d):
@@ -72,9 +70,9 @@ def day_id(d):
     return f"d{d.isoformat()}"
 
 
-EXISTING = ({"cover", "index", "year", "goals", "color", "habits", "notes", "dots",
-             week_id(WEEK_SAMPLE), day_id(DAY_SAMPLE)}
-            | {f"m{i:02d}" for i in range(1, 13)} | {f"o{i:02d}" for i in range(1, 13)})
+EXISTING = set()
+WEEK_IDS = []
+WEEK_IDS_ALL = []
 
 
 def link(target, inner, cls=""):
@@ -125,17 +123,13 @@ def moon_icon(kind, size=12):
 
 
 def moon_today(d):
-    """Illuminated fraction + waxing flag at local noon (KST)."""
+    """Illuminated fraction + waxing flag at local noon (KST); principal phases come from MOON."""
     t = ephem.Date(dt.datetime(d.year, d.month, d.day, 3))
     k = ephem.Moon(t).phase / 100
     k2 = ephem.Moon(ephem.Date(t + 1)).phase / 100
     waxing = k2 > k
-    if k < .03:
-        name = "New moon"
-    elif k > .97:
-        name = "Full moon"
-    elif abs(k - .5) < .06:
-        name = "First quarter" if waxing else "Last quarter"
+    if d.isoformat() in MOON:
+        name = PHASE_NAME[MOON[d.isoformat()]]
     else:
         name = ("Waxing " if waxing else "Waning ") + ("crescent" if k < .5 else "gibbous")
     return k, waxing, name
@@ -177,11 +171,12 @@ NAV = [("index", "Index", "square"), ("year", "Year", "circle"), ("goals", "Goal
        ("habits", "Habits", "half"), ("notes", "Notes", "line")]
 
 
-def topnav(current=None):
+def topnav(current=None, month=None):
     out = ['<nav class="topnav">']
     for t, label, k in NAV:
         on = "on" if t == current else ""
-        out.append(f'<a href="#{t}" class="{on}">{shape(k, "currentColor", 8)}<span>{label}</span></a>')
+        tgt = f"h{(month or 1):02d}" if t == "habits" else t
+        out.append(f'<a href="#{tgt}" class="{on}">{shape(k, "currentColor", 8)}<span>{label}</span></a>')
     out.append('</nav>')
     return "".join(out)
 
@@ -189,9 +184,9 @@ def topnav(current=None):
 def page(pid, body, cls="", active_month=None, nav=None, style=""):
     n = PAGES.get(pid, 0)
     folio = (f'<div class="folio"><span>Atelier Soleil</span><i></i><span>{YEAR}</span><i></i>'
-             f'<b>N&deg; {n:02d}</b></div>')
+             f'<b>N&deg; {n:03d}</b></div>')
     return (f'<section class="page {cls}" id="{pid}" style="{style}">{tabs(active_month)}{folio}'
-            f'<div class="frame">{topnav(nav)}{body}</div></section>')
+            f'<div class="frame">{topnav(nav, active_month)}{body}</div></section>')
 
 
 def header(kicker, title, sub="", badge="", right=""):
@@ -246,7 +241,7 @@ def week_strip(start, current=None):
     out = ['<div class="wstrip">']
     for i in range(7):
         d = start + dt.timedelta(days=i)
-        on = " on" if current == d else ""
+        on = (" on" if current == d else "") + (" other" if d.year != YEAR else "")
         inner = f'{day_shape(d, 8)}<span>{d.day}</span>'
         if day_id(d) in EXISTING:
             out.append(f'<a href="#{day_id(d)}" class="wd lk{on}">{inner}</a>')
@@ -347,20 +342,22 @@ def index_page(pages):
         k, col = sh
         return (f'<a href="#{target}" class="toc-row">{shape(k, col, 14)}'
                 f'<span class="toc-name">{name}{f"<em>{note}</em>" if note else ""}</span>'
-                f'<span class="leader"></span><span class="pg">{pages[target]:02d}</span></a>')
+                f'<span class="leader"></span><span class="pg">{pages[target]:03d}</span></a>')
     toc = "".join([
         row(("circle", "#C8643B"), "Year at a Glance", "year"),
         row(("arch", "#D08068"), "Intentions", "goals", "goals &amp; vision"),
         row(("flower", "#D9A441"), "Sun Rings", "color", "year in color"),
-        row(("sun", "#26374D"), "January", "o01", "month opener"),
-        row(("square", "#6E7F5A"), "January Calendar", "m01", "monthly"),
-        row(("half", "#2F6B6B"), "Rituals", "habits", "habit tracker"),
-        row(("tri", "#D9A441"), "Week 01", week_id(WEEK_SAMPLE), "weekly spread"),
-        row(("circle", "#6B3E4F"), "Monday, January 4", day_id(DAY_SAMPLE), "daily page"),
+        row(("half", "#2F6B6B"), "Birthdays", "birthdays", "days to keep"),
+        row(("sun", "#26374D"), "The Months", "o01", "opener &middot; calendar &middot; rituals &middot; review"),
+        row(("tri", "#D9A441"), "The Weeks", WEEK_IDS_ALL[0], "53 weekly spreads"),
+        row(("square", "#6E7F5A"), "The Days", day_id(dt.date(YEAR, 1, 1)), "365 daily pages"),
+        row(("circle", "#6B3E4F"), "The Year, Kept", "yreview", "year in review"),
         row(("line", "#9C4A2E"), "Notes &amp; Dots", "notes", "lined / dot grid"),
     ])
     months = "".join(
         f'<a href="#o{i:02d}" class="colm">{art(i)}<span>{ABBR[i-1]}</span></a>' for i in range(1, 13))
+    weeks = "".join(f'<a href="#{w}" class="wpill" style="--c:{MAIN[week_month(dt.date.fromisocalendar(*map(int, w[1:].split("-")), 1)) - 1]}">'
+                    f'{int(w.split("-")[1]):02d}</a>' for w in WEEK_IDS_ALL)
     body = f'''
     <div class="index-wrap">
       <div class="index-left">
@@ -380,6 +377,8 @@ def index_page(pages):
         <div class="toc">{toc}</div>
         <div class="label mlabel">Months &mdash; tap an arch</div>
         <div class="colonnade">{months}</div>
+        <div class="label mlabel">Weeks</div>
+        <div class="wpills">{weeks}</div>
       </div>
     </div>'''
     return page("index", body, "index", nav="index")
@@ -467,7 +466,8 @@ def month_page(m):
       <div class="block next"><div class="label">Next &middot; {MONTHS[nm-1] if nm != 1 else str(YEAR + 1)}</div>
         {mini_month(nm, cls="compact") if nm != 1 else '<div class="end-note">See you next year.</div>'}</div>
     </aside>'''
-    right = f'<div class="crumbs label">{link("year", str(YEAR))} &nbsp;/&nbsp; {link(f"o{m:02d}", MONTHS[m-1] + " opener")}</div>'
+    right = (f'<div class="crumbs label">{link("year", str(YEAR))} &nbsp;/&nbsp; {link(f"o{m:02d}", "Opener")}'
+             f' &nbsp;/&nbsp; {link(f"h{m:02d}", "Rituals")} &nbsp;/&nbsp; {link(f"r{m:02d}", "Review")}</div>')
     body = header(f"{SEASON[m-1]} &nbsp;&middot;&nbsp; Month {m:02d}", MONTHS[m - 1], QUOTE[m-1],
                   badge=art_badge(m), right=right) + f'''
     <div class="month">{side}<div class="mcal">{head}{"".join(rows)}</div></div>'''
@@ -478,52 +478,55 @@ def habits_page(m=1):
     nd = calendar.monthrange(YEAR, m)[1]
     days = [dt.date(YEAR, m, d) for d in range(1, nd + 1)]
     head = '<div class="hrow hhead"><span class="hname label">Ritual</span>' + "".join(
-        f'<span class="hd-day{" we" if d.weekday() >= 5 else ""}">{day_shape(d, 7)}{d.day}</span>' for d in days) + \
-        '<span class="htot label">Total</span></div>'
+        f'<a href="#{day_id(d)}" class="hd-day{" we" if d.weekday() >= 5 else ""}{" hol" if d in HOL else ""}">'
+        f'{day_shape(d, 7)}{d.day}</a>' for d in days) + '<span class="htot label">Total</span></div>'
     rows = "".join(
         '<div class="hrow"><span class="hname"><i></i></span>' + "".join(
             f'<span class="hc{" we" if d.weekday() >= 5 else ""}"><b></b></span>' for d in days)
         + '<span class="htot"><i></i></span></div>' for _ in range(12))
-    right = f'<div class="crumbs label">{link("year", str(YEAR))} &nbsp;/&nbsp; {link(f"m{m:02d}", MONTHS[m-1])}</div>'
+    right = (f'<div class="crumbs label">{link("year", str(YEAR))} &nbsp;/&nbsp; {link(f"m{m:02d}", MONTHS[m-1])}'
+             f' &nbsp;/&nbsp; {link(f"r{m:02d}", "Review")}</div>')
     body = header(f"Habit Tracker &nbsp;&middot;&nbsp; {MONTHS[m-1]}", "Rituals", "Small things, done often.",
                   badge=art_badge(m), right=right) + f'''
     <div class="habits">
-      <div class="hgrid">{head}{rows}</div>
+      <div class="hgrid" style="--nd:{nd}">{head}{rows}</div>
       <div class="hfoot">
         <div class="block"><div class="label">What helped</div>{lines(2, 34)}</div>
         <div class="block"><div class="label">What got in the way</div>{lines(2, 34)}</div>
         <div class="block"><div class="label">Next month I&rsquo;ll try</div>{lines(2, 34)}</div>
       </div>
     </div>'''
-    return page("habits", body, "habitp", active_month=m, nav="habits", style=f"--c:{MAIN[m-1]};--l:{LIGHT[m-1]}")
+    return page(f"h{m:02d}", body, "habitp", active_month=m, nav="habits", style=f"--c:{MAIN[m-1]};--l:{LIGHT[m-1]}")
 
 
 def week_page(start):
     iso = start.isocalendar()
     end = start + dt.timedelta(days=6)
-    m = start.month
+    m = week_month(start)
     days = []
     for i in range(7):
         d = start + dt.timedelta(days=i)
         ph = MOON.get(d.isoformat())
         title = (f'<span class="dl">{day_shape(d, 11)}<span class="label">{DOW[i]}</span>'
                  f'{moon_icon(ph, 11) if ph else ""}</span><span class="dnum">{d.day:02d}</span>')
-        title = link(day_id(d), title, "dh lk") if day_id(d) in EXISTING else f'<span class="dh">{title}</span>'
+        title = link(day_id(d), title, "dh") if day_id(d) in EXISTING else f'<span class="dh off">{title}</span>'
         evs = []
         if d in HOL:
             evs.append(f'<span class="ev-h">{"Substitute holiday" if HOL[d] == "Substitute" else HOL[d]}</span>')
-        if d in TERM:
-            evs.append(f'<span class="ev-t">{shape("sun", "#D9A441", 8)}{TERM[d][0]} &middot; <em>{TERM[d][1]}</em></span>')
+        if d in ALLTERM:
+            evs.append(f'<span class="ev-t">{shape("sun", "#D9A441", 8)}{ALLTERM[d][0]} &middot; <em>{ALLTERM[d][1]}</em></span>')
         if ph:
             evs.append(f'<span class="ev-t">{moon_icon(ph, 8)}{PHASE_NAME[ph]}</span>')
         evl = f'<div class="wev">{"".join(evs)}</div>' if evs else ""
-        days.append(f'<div class="day{" we" if d.weekday() >= 5 else ""}{" hol" if d in HOL else ""}">'
-                    f'{title}{evl}{lines(14, 32, "fill")}</div>')
+        days.append(f'<div class="day{" we" if d.weekday() >= 5 else ""}{" hol" if d in HOL else ""}'
+                    f'{" other" if d.year != YEAR else ""}">{title}{evl}{lines(14, 32, "fill")}</div>')
     days.append(f'<div class="day notebox"><span class="dh"><span class="dl">{shape("line", "#9C4A2E", 11)}'
                 f'<span class="label">Notes</span></span><span class="dnum amp">&amp;</span></span>'
                 f'<div class="dotwrap">{dotgrid(22)}</div></div>')
     hab = "".join('<div class="mh-row"><i></i>' + "<b></b>" * 7 + '</div>' for _ in range(4))
-    ticks = "".join(f'<i class="{"on" if w + 1 == iso[1] else ("past" if w + 1 < iso[1] else "")}"></i>' for w in range(52))
+    wk = iso[1] if iso[0] == YEAR else 0
+    ticks = "".join(f'<a href="#{WEEK_IDS[w]}" class="{"on" if w + 1 == wk else ("past" if w + 1 < wk else "")}"></a>'
+                    for w in range(52))
     side = f'''
     <aside class="wside">
       <div class="block"><div class="label">This week&rsquo;s focus</div>{lines(3)}</div>
@@ -533,24 +536,33 @@ def week_page(start):
         <div class="mhabit"><div class="mh-row mh-head"><i></i>{"".join(f"<b>{shape(k, c, 8)}</b>" for k, c in DAYSHAPE)}</div>{hab}</div>
       </div>
       <div class="block grow"><div class="label">Looking ahead</div>{lines(10, cls="fill")}</div>
-      <div class="block prog"><div class="label">Week {iso[1]} of 52</div><div class="ticks">{ticks}</div></div>
+      <div class="block prog"><div class="label">{f"Week {wk} of 52" if wk else "Before week 1"}</div><div class="ticks">{ticks}</div></div>
     </aside>'''
-    sub = f"{MONTHS[start.month-1]} {start.day} &ndash; {MONTHS[end.month-1] + ' ' if end.month != start.month else ''}{end.day}, {YEAR}"
+    y0 = f", {start.year}" if start.year != end.year else ""
+    sub = (f"{MONTHS[start.month-1]} {start.day}{y0} &ndash; "
+           f"{MONTHS[end.month-1] + ' ' if end.month != start.month else ''}{end.day}, {end.year}")
+    prev_w = week_id(start - dt.timedelta(days=7))
+    next_w = week_id(start + dt.timedelta(days=7))
     right = (f'<div class="crumbs label">{link("year", str(YEAR))} &nbsp;/&nbsp; {link(f"m{m:02d}", MONTHS[m-1])}</div>'
-             + week_strip(start))
-    body = header("Weekly", f"Week {iso[1]:02d}", sub, badge=arch_badge("Week", f"{iso[1]:02d}", MAIN[m-1]),
-                  right=right) + f'<div class="week">{side}<div class="wgrid">{"".join(days)}</div></div>'
+             f'<div class="hd-row">{chev(prev_w, True)}{week_strip(start)}{chev(next_w, False)}</div>')
+    body = header("Weekly" + (f" &nbsp;&middot;&nbsp; {iso[0]}" if iso[0] != YEAR else ""), f"Week {iso[1]:02d}", sub,
+                  badge=arch_badge("Week", f"{iso[1]:02d}", MAIN[m-1]), right=right) + \
+        f'<div class="week">{side}<div class="wgrid">{"".join(days)}</div></div>'
     return page(week_id(start), body, "weekly", active_month=m, style=f"--c:{MAIN[m-1]};--l:{LIGHT[m-1]}")
 
 
 def day_page(d):
     m = d.month
     rise, sset, mins = almanac.sun_times(d)
+    prev_mins = almanac.sun_times(d - dt.timedelta(days=1))[2]
+    delta = mins - prev_mins
 
     def frac(t):
         return (t.hour + t.minute / 60 - 6) / 17 * 100
 
-    marks = (f'<div class="smark" style="top:{frac(rise):.2f}%;--mc:#D9A441"><span>{shape("half", "#D9A441", 9)}Sunrise {fmt_hm(rise)}</span></div>'
+    early = frac(rise) < 0
+    marks = (f'<div class="smark{" early" if early else ""}" style="top:{max(frac(rise), 0):.2f}%;--mc:#D9A441">'
+             f'<span>{shape("half", "#D9A441", 9)}{"Sunrise before 6 &middot; " if early else "Sunrise "}{fmt_hm(rise)}</span></div>'
              f'<div class="smark" style="top:{frac(sset):.2f}%;--mc:#C8643B"><span>{shape("half", "#C8643B", 9)}Sunset {fmt_hm(sset)}</span></div>')
     hours = "".join(
         f'<div class="hr"><span class="t">{h if h <= 12 else h - 12}<em>{"am" if h < 12 else "pm"}</em></span><i></i></div>'
@@ -565,19 +577,23 @@ def day_page(d):
             f'<circle cx="15" cy="15" r="13" fill="none" stroke="#3E3530" stroke-width="1.4"/></svg>')
     cur = max(t for t in ALLTERM if t <= d)
     nxt = min(t for t in ALLTERM if t > d)
+    today_term = d in ALLTERM
     sunrays = "".join(f'<rect x="74.2" y="-1" width="1.6" height="4" rx=".8" fill="#D9A441" transform="rotate({i * 45} 75 12)"/>' for i in range(8))
     arc = (f'<svg class="sunarc" width="150" height="66" viewBox="0 0 150 66">'
            f'<path d="M10 56A65 46 0 0 1 140 56" fill="none" stroke="#D9A441" stroke-width="1.2" stroke-dasharray="1.5 4" stroke-linecap="round"/>'
            f'<rect x="2" y="55.5" width="146" height="1" fill="#D1C4B0"/>'
            f'<circle cx="10" cy="56" r="3" fill="#D9A441"/><circle cx="140" cy="56" r="3" fill="#C8643B"/>'
            f'{sunrays}<circle cx="75" cy="12" r="6" fill="#D9A441"/></svg>')
+    dsign = "+" if delta > 0 else ("&minus;" if delta < 0 else "&plusmn;")
+    term_line = (f'<b class="tt">Today: {ALLTERM[d][0]}</b> &middot; <em>{ALLTERM[d][1]}</em>' if today_term else
+                 f'{ALLTERM[cur][0]} &middot; <em>{ALLTERM[cur][1]}</em>')
     sky = f'''
         <div class="sky">
           <div class="sky-sun">{arc}<div class="sky-times"><span>{fmt_hm(rise)}</span><span>{fmt_hm(sset)}</span></div></div>
           <div class="sky-txt">
             <div class="label">Sky over Seoul</div>
-            <b>{mins // 60}h {mins % 60:02d}m of daylight</b>
-            <span>{shape("sun", "#D9A441", 9)}{ALLTERM[cur][0]} &middot; <em>{ALLTERM[cur][1]}</em><i class="nx">next &middot; {ALLTERM[nxt][0]}, {MON3[nxt.month-1]} {nxt.day}</i></span>
+            <b>{mins // 60}h {mins % 60:02d}m of daylight <small>{dsign}{abs(delta)} min</small></b>
+            <span>{shape("sun", "#D9A441", 9)}{term_line}<i class="nx">next &middot; {ALLTERM[nxt][0]}, {MON3[nxt.month-1]} {nxt.day}</i></span>
             <span>{disc}{pname}<i class="nx">{PHASE_NAME[nv].lower()} &middot; {MON3[nd.month-1]} {nd.day}</i></span>
           </div>
         </div>'''
@@ -587,13 +603,22 @@ def day_page(d):
                                   ("flower", "good"), ("sun", "glow")))
     t3 = "".join(f'<div class="t3"><span style="background:{c}">{i}</span><i></i></div>'
                  for i, c in ((1, "#C8643B"), (2, "#D9A441"), (3, "#2F6B6B")))
-    right = (week_strip(mon, current=d) +
-             f'<div class="crumbs label">{link(f"m{m:02d}", MONTHS[m-1])} &nbsp;/&nbsp; '
-             f'{link(week_id(d), "Week " + f"{d.isocalendar()[1]:02d}")}</div>')
-    hol = f' &nbsp;&middot;&nbsp; <span class="hol-txt">{HOL[d]}</span>' if d in HOL else ""
+    prev_d = day_id(d - dt.timedelta(days=1)) if d > dt.date(YEAR, 1, 1) else "index"
+    next_d = day_id(d + dt.timedelta(days=1)) if d < dt.date(YEAR, 12, 31) else "yreview"
+    right = (f'<div class="crumbs label">{link(f"m{m:02d}", MONTHS[m-1])} &nbsp;/&nbsp; '
+             f'{link(week_id(mon), "Week " + f"{d.isocalendar()[1]:02d}")}</div>'
+             f'<div class="hd-row">{chev(prev_d, True)}{week_strip(mon, current=d)}{chev(next_d, False)}</div>')
+    hol = f' &nbsp;&middot;&nbsp; <span class="hol-txt">{HOL[d] if HOL[d] != "Substitute" else "Substitute holiday"}</span>' if d in HOL else ""
     kicker = f'Day {doy:03d} of {total} <i class="kbar"><b style="width:{doy / total * 100:.2f}%"></b></i>'
+    if d.weekday() == 6:
+        review = f'''
+        <div class="block wkrev"><div class="label">Week in review</div>{lines(2, 32)}
+          <div class="rate"><span class="label">Rate the week</span>{shape("sun", "#BFAF99", 18, outline=True) * 5}</div></div>'''
+    else:
+        review = f'<div class="block"><div class="label">Grateful for</div>{lines(3, 32)}</div>'
+    badge_c = "#C8643B" if d in HOL else MAIN[m-1]
     body = header(kicker, f'{calendar.day_name[d.weekday()]}', f"{MONTHS[m-1]} {d.day}, {YEAR}{hol}",
-                  badge=arch_badge(DOW[d.weekday()], f"{d.day:02d}", MAIN[m-1]), right=right) + f'''
+                  badge=arch_badge(DOW[d.weekday()], f"{d.day:02d}", badge_c), right=right) + f'''
     <div class="daily">
       <div class="col sched"><div class="label">Schedule</div><div class="hours">{hours}{marks}</div></div>
       <div class="col mid">
@@ -603,14 +628,15 @@ def day_page(d):
       <div class="col right">
         {sky}
         <div class="block grow"><div class="label">Notes</div><div class="dotwrap boxed">{dotgrid(24)}</div></div>
-        <div class="block"><div class="label">Grateful for</div>{lines(3, 32)}</div>
+        {review}
         <div class="trackers">
           <div class="block"><div class="label">Water</div><div class="water">{water}</div></div>
           <div class="block"><div class="label">Mood</div><div class="moods">{moods}</div></div>
         </div>
       </div>
     </div>'''
-    return page(day_id(d), body, "dailyp", active_month=m, style=f"--c:{MAIN[m-1]};--l:{LIGHT[m-1]}")
+    return page(day_id(d), body, "dailyp" + (" sunday" if d.weekday() == 6 else ""), active_month=m,
+                style=f"--c:{MAIN[m-1]};--l:{LIGHT[m-1]}")
 
 
 def notes_page():
@@ -707,25 +733,132 @@ def color_page():
     return page("color", body, "colorp")
 
 
+def week_month(start):
+    """Month a week belongs to (ISO rule: the month of its Thursday), clamped to YEAR."""
+    th = start + dt.timedelta(days=3)
+    if th.year < YEAR:
+        return 1
+    if th.year > YEAR:
+        return 12
+    return th.month
+
+
+def chev(target, left=True, label=""):
+    d = "M7.5 1.5L3 6l4.5 4.5" if left else "M4.5 1.5L9 6l-4.5 4.5"
+    icon = (f'<svg width="12" height="12" viewBox="0 0 12 12"><path d="{d}" fill="none" stroke="currentColor" '
+            f'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+    inner = (icon + f'<span>{label}</span>') if left else (f'<span>{label}</span>' + icon)
+    if target and target in EXISTING:
+        return f'<a href="#{target}" class="chev">{inner}</a>'
+    return f'<span class="chev off">{inner}</span>'
+
+
+def review_page(m):
+    weeks = cal.monthdatescalendar(YEAR, m)
+    cells = "".join(
+        (f'<a href="#{day_id(d)}" class="rc{" we" if d.weekday() >= 5 else ""}"><b></b><em>{d.day}</em></a>'
+         if d.month == m else '<span class="rc out"></span>') for wk in weeks for d in wk)
+    head = "".join(f'<i>{shape(DAYSHAPE[i][0], DAYSHAPE[i][1], 8)}</i>' for i in range(7))
+    nm = m % 12 + 1
+    carry = MONTHS[nm - 1] if m < 12 else str(YEAR + 1)
+    right = (f'<div class="crumbs label">{link(f"m{m:02d}", MONTHS[m-1])} &nbsp;/&nbsp; {link(f"h{m:02d}", "Rituals")}'
+             f' &nbsp;/&nbsp; {link(f"o{nm:02d}" if m < 12 else "yreview", "Next " + ("month" if m < 12 else "&middot; the year"))}</div>')
+    body = header(f"{SEASON[m-1]} &nbsp;&middot;&nbsp; Month {m:02d} in review", "Looking back",
+                  f"{MONTHS[m-1]} {YEAR} &mdash; {QUOTE[m-1]}", badge=art_badge(m), right=right) + f'''
+    <div class="review">
+      <div class="rv-left">
+        <div class="block"><div class="label">The month in color</div>
+          <div class="rgrid"><div class="rh">{head}</div><div class="rg">{cells}</div></div></div>
+        <div class="block"><div class="label">Rate the month</div><div class="rate big">{shape("sun", "#BFAF99", 24, outline=True) * 5}</div></div>
+        <div class="block"><div class="label">One word for {MONTHS[m-1]}</div><div class="oneword"></div></div>
+      </div>
+      <div class="rv-mid">
+        <div class="block grow"><div class="label">Highlights</div>{lines(24, 34, "fill")}</div>
+        <div class="block"><div class="label">Proud of</div>{lines(4, 34)}</div>
+      </div>
+      <div class="rv-right">
+        <div class="block"><div class="label">Lessons</div>{lines(4, 34)}</div>
+        <div class="block"><div class="label">Grateful for</div>{lines(4, 34)}</div>
+        <div class="block grow"><div class="label">Carry into {carry}</div>{checks(20, 34, "fill")}</div>
+      </div>
+    </div>'''
+    return page(f"r{m:02d}", body, "reviewp", active_month=m, style=f"--c:{MAIN[m-1]};--l:{LIGHT[m-1]}")
+
+
+def birthdays_page():
+    boxes = "".join(f'''
+      <div class="bbox" style="--c:{MAIN[m-1]}">
+        <a href="#m{m:02d}" class="bb-h"><span class="bb-g">{glyph(m, 12)}</span><b>{MONTHS[m-1]}</b><em>{m:02d}</em></a>
+        <div class="blines">{"<i><span></span></i>" * 5}</div>
+      </div>''' for m in range(1, 13))
+    body = header("Remember", "Birthdays &amp; days to keep", "The people and dates that matter, all in one place.") + \
+        f'<div class="bgrid">{boxes}</div>'
+    return page("birthdays", body, "birthp")
+
+
+def year_review_page():
+    rows = "".join(
+        f'<a href="#r{m:02d}" class="yr-row"><span class="yr-a">{art(m)}</span><b>{MONTHS[m-1]}</b><i></i></a>'
+        for m in range(1, 13))
+    rings = "".join(f'<circle cx="150" cy="300" r="{r}" fill="{c}"/>' for r, c in
+                    ((96, "#9DB4C0"), (74, "#2F6B6B"), (52, "#D9A441"), (30, "#F6EEDF")))
+    body = header(f"{YEAR} in review", "The year, kept", "Look how far you have come.") + f'''
+    <div class="yreview">
+      <div class="yr-left">
+        <div class="label">Twelve months, one line each</div>
+        <div class="yr-rows">{rows}</div>
+      </div>
+      <div class="yr-right">
+        <div class="block"><div class="label">Top moments</div>{lines(5, 34)}</div>
+        <div class="yr-trio">
+          <div class="block"><div class="label">Best book</div>{lines(1, 34)}</div>
+          <div class="block"><div class="label">Best film</div>{lines(1, 34)}</div>
+          <div class="block"><div class="label">Best song</div>{lines(1, 34)}</div>
+        </div>
+        <div class="block"><div class="label">Places I went</div>{lines(2, 34)}</div>
+        <div class="block grow"><div class="label">Dear {YEAR + 1} me</div>{lines(6, 34, "fill")}</div>
+        <div class="word-arch wsmall">
+          <svg class="wa-art" viewBox="0 0 300 300" preserveAspectRatio="xMidYMax slice">{rings}</svg>
+          <div class="label">A word for {YEAR + 1}</div><div class="word-line"></div>
+        </div>
+      </div>
+    </div>'''
+    return page("yreview", body, "yrp", active_month=12)
+
+
 # ---------------------------------------------------------------- assemble
 
 def build():
-    order = ["cover", "index", "year", "goals", "color",
-             "o01", "m01", "habits", week_id(WEEK_SAMPLE), day_id(DAY_SAMPLE)]
-    for i in range(2, 13):
-        order += [f"o{i:02d}", f"m{i:02d}"]
-    order += ["notes", "dots"]
+    order = ["cover", "index", "year", "goals", "color", "birthdays"]
+    render = {"cover": cover, "year": year_page, "goals": goals_page, "color": color_page,
+              "birthdays": birthdays_page, "notes": notes_page, "dots": dots_page, "yreview": year_review_page}
+    d = dt.date(YEAR, 1, 1)
+    first_mon = d - dt.timedelta(days=d.weekday())
+    while d.year == YEAR:
+        if d.day == 1:
+            if d.month > 1:
+                order.append(f"r{d.month - 1:02d}")
+            m = d.month
+            order += [f"o{m:02d}", f"m{m:02d}", f"h{m:02d}"]
+            render[f"o{m:02d}"] = (lambda m=m: divider(m))
+            render[f"m{m:02d}"] = (lambda m=m: month_page(m))
+            render[f"h{m:02d}"] = (lambda m=m: habits_page(m))
+            render[f"r{m:02d}"] = (lambda m=m: review_page(m))
+        if d.weekday() == 0 or d == dt.date(YEAR, 1, 1):
+            mon = d - dt.timedelta(days=d.weekday())
+            order.append(week_id(mon))
+            render[week_id(mon)] = (lambda mon=mon: week_page(mon))
+        order.append(day_id(d))
+        render[day_id(d)] = (lambda d=d: day_page(d))
+        d += dt.timedelta(days=1)
+    order += ["r12", "yreview", "notes", "dots"]
+    EXISTING.clear()
+    EXISTING.update(order)
+    WEEK_IDS_ALL.extend(p for p in order if p.startswith("w"))
+    WEEK_IDS.extend(p for p in WEEK_IDS_ALL if p.startswith(f"w{YEAR}-"))
     pages = {pid: i + 1 for i, pid in enumerate(order)}
     PAGES.update(pages)
-    render = {
-        "cover": cover, "index": lambda: index_page(pages), "year": year_page,
-        "goals": goals_page, "color": color_page, "habits": habits_page, "notes": notes_page, "dots": dots_page,
-        week_id(WEEK_SAMPLE): lambda: week_page(WEEK_SAMPLE),
-        day_id(DAY_SAMPLE): lambda: day_page(DAY_SAMPLE),
-    }
-    for i in range(1, 13):
-        render[f"m{i:02d}"] = (lambda i=i: month_page(i))
-        render[f"o{i:02d}"] = (lambda i=i: divider(i))
+    render["index"] = lambda: index_page(pages)
     html_pages = "\n".join(render[p]() for p in order)
     fonts = (HERE / "fonts" / "local.css").read_text()
     css = (HERE / "style.css").read_text()
@@ -738,6 +871,10 @@ def build():
 <body>{html_pages}
 <script>{(HERE / "fill.js").read_text()}</script></body></html>'''
     (HERE / "planner.html").write_text(html)
+    outline = []
+    for pid in order:
+        outline.append(pid)
+    (HERE / "outline.json").write_text(json.dumps({"order": order, "pages": pages}))
     print(f"wrote planner.html with {len(order)} pages")
 
 

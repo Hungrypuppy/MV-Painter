@@ -28,11 +28,10 @@ svg{display:block}
 /* ---------------------------------------------------------- month tabs */
 .tabs{position:absolute;top:40px;bottom:40px;right:0;width:60px;display:flex;flex-direction:column;gap:5px;z-index:3}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;margin-left:16px;background:var(--tone);border-radius:12px 0 0 12px;color:var(--tt)}
-.tab .glyph{opacity:.85}
-.tab.on .glyph{opacity:1}
-.tab span{writing-mode:vertical-rl;font-family:var(--sans);font-weight:500;font-size:9.5px;letter-spacing:.32em;color:var(--tt);opacity:.92}
+
+.tab span{writing-mode:vertical-rl;font-family:var(--sans);font-weight:500;font-size:9.5px;letter-spacing:.32em;color:var(--tt)}
 .tab.on{margin-left:0;border-radius:16px 0 0 16px}
-.tab.on span{font-weight:600;opacity:1}
+.tab.on span{font-weight:600}
 
 /* ---------------------------------------------------------- top nav */
 .topnav{position:absolute;top:0;right:0;display:flex;gap:24px;z-index:2}
@@ -80,7 +79,6 @@ svg{display:block}
 .mini .mg span,.mini .mg a{font-family:var(--sans);font-size:11px;color:var(--ink);text-align:center;line-height:22px;height:22px;position:relative;display:flex;align-items:center;justify-content:center}
 .mini .mg .we{color:var(--c)}
 .mini .mg .fm::before{content:"";position:absolute;width:21px;height:21px;border-radius:50%;border:1px solid var(--ochre);left:50%;top:50%;transform:translate(-50%,-50%)}
-.mini .mg .lk{font-weight:600;color:var(--terra)}
 .mini.compact .mg span{line-height:19px;height:19px;font-size:10px}
 .mini.compact .mg .fm::before{width:18px;height:18px}
 .mini.compact .mh i{font-size:8px;padding-bottom:3px}
@@ -128,7 +126,6 @@ svg{display:block}
 .dg7 > *{height:31px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;padding-top:3px}
 .dg7 b{font-family:var(--text);font-weight:500;font-size:14px;line-height:1}
 .dg7 .we b{color:var(--c)}
-.dg7 .lk b{color:var(--terra)}
 .dg7 svg{margin-top:1px}
 .dv-legend{display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px dotted var(--line2)}
 .dv-legend span{display:flex;align-items:center;gap:5px}
@@ -150,12 +147,12 @@ svg{display:block}
 .keyrow span{display:flex;flex-direction:column;align-items:center;gap:6px}
 .keyrow em{font-style:normal;font-size:9px;letter-spacing:.12em;color:var(--ink3);text-transform:uppercase}
 .index-right{flex:1;display:flex;flex-direction:column}
-.toc-row{display:flex;align-items:center;gap:18px;height:56px;border-bottom:1px solid var(--line)}
+.toc-row{display:flex;align-items:center;gap:18px;height:50px;border-bottom:1px solid var(--line)}
 .toc-name{font-family:var(--display);font-weight:400;font-size:27px;white-space:nowrap;letter-spacing:-.005em}
 .toc-name em{font-family:var(--sans);font-style:normal;font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink3);margin-left:14px;font-weight:500}
 .leader{flex:1;border-bottom:1px dotted var(--line2);transform:translateY(5px)}
 .pg{font-family:var(--text);font-style:italic;font-size:17px;color:var(--terra)}
-.mlabel{margin:38px 0 16px}
+.mlabel{margin:30px 0 14px}
 .colonnade{display:flex;justify-content:space-between}
 .colm{display:flex;flex-direction:column;align-items:center;gap:8px}
 .colm svg{width:54px;height:76px}
@@ -211,7 +208,6 @@ a.wk{color:var(--terra);font-weight:600}
 .cell.we{background:color-mix(in srgb,var(--l) 58%,var(--paper))}
 .cell .dn{font-family:var(--text);font-size:19px;font-weight:500;line-height:1}
 .cell.we .dn{color:var(--c)}
-.cell a.dn{color:#F6EEDF;background:var(--terra);border-radius:50%;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;margin:-6px 0 0 -7px;font-size:16px}
 .cell.out .dn{color:var(--ink3);opacity:.4}
 .m1{position:absolute;left:10px;top:32px;font-size:8px;font-weight:600;letter-spacing:.24em;color:var(--c)}
 .mi{position:absolute;right:9px;top:9px}
@@ -219,7 +215,7 @@ a.wk{color:var(--terra);font-weight:600}
 /* ---------------------------------------------------------- habits */
 .habits{flex:1;display:flex;flex-direction:column;gap:24px;min-height:0}
 .hgrid{flex:1;display:flex;flex-direction:column;min-height:0}
-.hrow{display:grid;grid-template-columns:200px repeat(31,1fr) 54px;align-items:center;flex:1;border-bottom:1px solid var(--line)}
+.hrow{display:grid;grid-template-columns:200px repeat(var(--nd,31),1fr) 54px;align-items:center;flex:1;border-bottom:1px solid var(--line)}
 .hhead{flex:none;height:46px;border-bottom:1px solid var(--line2)}
 .hname{padding-right:20px}
 .hd-day{display:flex;flex-direction:column;align-items:center;gap:5px;font-family:var(--text);font-size:13px;font-weight:500}
@@ -235,7 +231,6 @@ a.wk{color:var(--terra);font-weight:600}
 .wstrip{display:flex;gap:4px}
 .wd{width:34px;height:46px;border-radius:17px 17px 4px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:1px solid var(--line2)}
 .wd span{font-family:var(--text);font-size:14px;font-weight:500;line-height:1}
-.wd.lk{border-color:var(--terra)}
 .wd.on{background:var(--c);border-color:var(--c)}
 .wd.on span{color:#F6EEDF}
 .wd.on .shp g{fill:#F6EEDF !important}
@@ -255,7 +250,6 @@ a.wk{color:var(--terra);font-weight:600}
 .day.we .dl .label{color:var(--c)}
 .dnum{font-family:var(--display);font-size:32px;font-weight:300;line-height:1}
 .day.we .dnum{color:var(--c)}
-.dh.lk .dnum{color:var(--terra)}
 .dnum.amp{font-style:italic;color:var(--terra)}
 .notebox{border-top-color:var(--terra)}
 
@@ -337,9 +331,9 @@ a.wk{color:var(--terra);font-weight:600}
 .day.hol .dnum{color:var(--terra)}
 .prog{flex:none}
 .ticks{display:grid;grid-template-columns:repeat(26,1fr);gap:4px 3px;margin-top:4px}
-.ticks i{height:9px;border-radius:2px;background:var(--line)}
-.ticks i.past{background:var(--line2)}
-.ticks i.on{background:var(--c)}
+.ticks a{height:9px;border-radius:2px;background:var(--line)}
+.ticks a.past{background:var(--line2)}
+.ticks a.on{background:var(--c)}
 
 /* daily extras */
 .kbar{display:inline-block;width:72px;height:3px;background:var(--line);border-radius:2px;margin-left:10px;vertical-align:middle;position:relative;overflow:hidden}
@@ -369,3 +363,65 @@ a.wk{color:var(--terra);font-weight:600}
 .ck{display:grid;grid-template-columns:22px 80px 1fr;align-items:center;gap:12px;height:38px;border-bottom:1px solid var(--line)}
 .sw{width:20px;height:20px;border-radius:50%;border:1px solid var(--line2);display:block}
 .ck em{font-family:var(--text);font-style:italic;font-size:15px;color:var(--ink2)}
+
+/* ================================================================ full edition */
+.hd-row{gap:8px}
+.chev{display:flex;align-items:center;justify-content:center;width:30px;height:46px;border-radius:15px;border:1px solid var(--line2);color:var(--ink2)}
+.chev span{display:none}
+.chev.off{opacity:.3}
+.day.other{opacity:.5}
+.dh.off .dnum{color:var(--ink3)}
+a.hd-day{color:inherit}
+.hd-day.hol{color:var(--terra)}
+.sky-txt b small{font-family:var(--sans);font-style:normal;font-size:9px;font-weight:600;letter-spacing:.12em;color:var(--c);margin-left:8px;vertical-align:middle}
+.sky-txt .tt{font-family:var(--sans);font-size:10.5px;font-weight:600;font-style:normal;color:var(--terra);margin:0}
+.rate{display:flex;align-items:center;gap:8px;margin-top:10px}
+.rate .label{margin-right:8px}
+.rate.big{gap:12px;margin-top:6px}
+
+/* week pills on the index */
+.wpills{display:grid;grid-template-columns:repeat(27,1fr);gap:5px}
+.wpill{height:21px;border-radius:11px 11px 3px 3px;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:600;
+  letter-spacing:.04em;color:var(--ink2);background:color-mix(in srgb,var(--c) 14%,var(--paper));border:1px solid color-mix(in srgb,var(--c) 35%,var(--paper))}
+
+/* month review */
+.review{flex:1;display:grid;grid-template-columns:300px 1fr 1fr;gap:44px;min-height:0}
+.rv-left,.rv-mid,.rv-right{display:flex;flex-direction:column;gap:26px;min-height:0}
+.rgrid{margin-top:4px}
+.rh,.rg{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.rh i{display:flex;justify-content:center;padding-bottom:4px}
+.rc{position:relative;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
+.rc b{position:absolute;inset:3px;border-radius:50%;border:1px solid var(--line2);background:rgba(255,255,255,.5)}
+.rc.we b{background:color-mix(in srgb,var(--l) 60%,var(--paper))}
+.rc em{position:relative;font-style:normal;font-family:var(--text);font-size:10px;color:var(--ink3)}
+.rc.out{visibility:hidden}
+.oneword{height:56px;border-bottom:1px solid var(--line2);border-radius:28px 28px 0 0;background:color-mix(in srgb,var(--l) 55%,var(--paper));margin-top:4px}
+
+/* birthdays */
+.bgrid{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:24px 36px;min-height:0}
+.bbox{display:flex;flex-direction:column;border-top:1.5px solid var(--c);padding-top:10px;min-height:0}
+.bb-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.bb-g{width:24px;height:24px;border-radius:12px 12px 3px 3px;background:var(--c);color:#F6EEDF;display:flex;align-items:center;justify-content:center}
+.bb-h b{font-family:var(--display);font-style:italic;font-weight:300;font-size:24px;line-height:1}
+.bb-h em{margin-left:auto;font-style:normal;font-size:9px;font-weight:600;letter-spacing:.2em;color:var(--c)}
+.blines{flex:1;display:flex;flex-direction:column;justify-content:space-evenly}
+.blines i{display:flex;height:30px;border-bottom:1px solid var(--line)}
+.blines i span{width:38px;border-right:1px solid var(--line);height:20px;margin-top:8px}
+
+/* year in review */
+.yreview{flex:1;display:flex;gap:54px;min-height:0}
+.yr-left{width:520px;flex:none;display:flex;flex-direction:column}
+.yr-rows{flex:1;display:flex;flex-direction:column;margin-top:6px}
+.yr-row{flex:1;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line)}
+.yr-a svg{width:26px;height:36px}
+.yr-row b{width:96px;flex:none;font-family:var(--display);font-style:italic;font-weight:300;font-size:21px}
+.yr-row i{flex:1}
+.yr-right{flex:1;display:flex;flex-direction:column;gap:20px;min-height:0}
+.yr-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.word-arch.wsmall{height:150px;border-radius:75px 75px 4px 4px;padding-top:34px;flex:none}
+.wsmall .wa-art{transform:scale(.6);transform-origin:50% 100%;left:50%;margin-left:-150px}
+.wsmall .word-line{height:34px}
+
+.wd.other{opacity:.38}
+.smark.early{border-top-color:transparent}
+.smark.early span{top:6px}

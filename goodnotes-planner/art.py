@@ -318,10 +318,10 @@ def glyph(m, size=10):
     """Tiny single-colour month mark (currentColor) for tabs and labels."""
     g = [
         crescent(6, 6, 5, 8.3, 4.3, 4.3, "currentColor"),
-        '<circle cx="4.4" cy="6.8" r="3.4"/><circle cx="7.6" cy="5.2" r="3.4" opacity=".55"/>',
+        '<circle cx="4.4" cy="6.8" r="3.4"/><circle cx="7.6" cy="5.2" r="3.4" fill-opacity=".55"/>',
         '<path d="M6 11.4Q11.2 6 6 .6Q.8 6 6 11.4Z"/>',
         '<path d="M6 .8C6 .8 1.9 6.2 1.9 8a4.1 4.1 0 0 0 8.2 0C10.1 6.2 6 .8 6 .8Z"/>',
-        "".join(f'<circle cx="{6 + 3 * math.cos(i * 1.2566 - 1.5708):.2f}" cy="{6 + 3 * math.sin(i * 1.2566 - 1.5708):.2f}" r="2.1"/>' for i in range(5)) + '<circle cx="6" cy="6" r="1.4" opacity=".5"/>',
+        "".join(f'<circle cx="{6 + 3 * math.cos(i * 1.2566 - 1.5708):.2f}" cy="{6 + 3 * math.sin(i * 1.2566 - 1.5708):.2f}" r="2.1"/>' for i in range(5)) + '<circle cx="6" cy="6" r="1.4" fill-opacity=".5"/>',
         '<path d="M.6 4.6q1.35-1.8 2.7 0t2.7 0 2.7 0 2.7 0M.6 8.6q1.35-1.8 2.7 0t2.7 0 2.7 0 2.7 0" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
         '<circle cx="6" cy="6" r="2.7"/>' + "".join(
             f'<rect x="5.45" y=".4" width="1.1" height="2.2" rx=".55" transform="rotate({i * 45} 6 6)"/>' for i in range(8)),
@@ -330,7 +330,7 @@ def glyph(m, size=10):
             f'<ellipse cx="{6 + sx * 1.7}" cy="{2.4 + j * 2.2}" rx="1.1" ry="1.9" transform="rotate({sx * 32} {6 + sx * 1.7} {2.4 + j * 2.2})"/>'
             for j in range(3) for sx in (-1, 1)),
         '<g transform="rotate(38 6 6)"><path d="M6 10.6Q10.6 5.6 6 .6Q1.4 5.6 6 10.6Z"/><rect x="5.5" y="9.6" width="1" height="2.4" rx=".5"/></g>',
-        '<circle cx="6" cy="6" r="4.4"/><circle cx="6" cy="6" r="5.6" fill="none" stroke="currentColor" stroke-width=".7" opacity=".6"/>',
+        '<circle cx="6" cy="6" r="4.4"/><circle cx="6" cy="6" r="5.6" fill="none" stroke="currentColor" stroke-width=".7" stroke-opacity=".6"/>',
         '<path d="M6 .6L9.4 5.2H7.6L10.6 9.4H1.4L4.4 5.2H2.6Z"/><rect x="5.4" y="9.2" width="1.2" height="2.4"/>',
     ][m - 1]
     return f'<svg class="glyph" width="{size}" height="{size}" viewBox="0 0 12 12"><g fill="currentColor">{g}</g></svg>'
